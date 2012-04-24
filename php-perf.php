@@ -300,7 +300,7 @@ function test_mysql(){
 			 cur_timestamp TIMESTAMP
 		);";
 		
-		if(@mysql_query($sql, $conn)) $summary.="Created table $table.<br>";
+		if(@mysql_query($sql, $conn)) $summary.="&bull; Created table $table.<br>";
 		//--- create a table ---//
 		
 		//--- insert a few rows ---//
@@ -311,12 +311,13 @@ function test_mysql(){
 			$sql = "INSERT INTO `{$table}`(`data`) VALUES('{$string}')";
 			$inserted = @mysql_query($sql, $conn);
 			
-			if($searchval < 5) $searchval[] = mysql_real_escape_string($string);
+			if(count($searchval) < 5) $searchval[] = mysql_real_escape_string($string);
 			
+			//echo "$i rows inserted<br>";//TODO debug
 		}
 		
 		if($inserted) 
-			$summary.="$rows rows inserted in $table.<br>";
+			$summary.="&bull; $rows rows inserted in $table.<br>";
 		else{ //insert failed
 			display_msg("MySQL INSERT operation failed at row $i. The user you provided might not have this permission or the database server went away.", MSG_TYPE_WARN); return;
 		}
@@ -328,7 +329,7 @@ function test_mysql(){
 		$sql = "SELECT * FROM `{$table}` WHERE `id`=" . $row_id;
 		$res = @mysql_query($sql, $conn);
 		
-		$summary.="Select row $row_id.<br>";
+		$summary.="&bull; Selected row $row_id.<br>";
 		
 		while($line = mysql_fetch_array($res)){
 			$tabledata[] = $line;
@@ -337,14 +338,15 @@ function test_mysql(){
 		$sql = "SELECT * FROM `{$table}` WHERE `data` IN('" . $searchval[1] . "', '". $searchval[2] . "', '". $searchval[3] . "')";
 		$res = @mysql_query($sql, $conn);
 		
-		$summary.="Select rows with data in: '" . $searchval[1] . "', '". $searchval[2] . "', '". $searchval[3] . "'.<br>";
+		$summary.="&bull; Select rows with data in: '" . $searchval[1] . "', '". $searchval[2] . "', '". $searchval[3] . "'.<br>";
 		
 		while($line = mysql_fetch_array($res)){
 			$tabledata[] = $line;
 		}
 		
-		$summary.="Selected data:";
-		$summary.= "<pre>" . print_r($tabledata, TRUE) . "</pre><br>";
+		
+		$summary.="Selected data:<br>";
+		$summary.= "<textarea cols='50' rows='10' style='width:100%;'>" . print_r($tabledata, TRUE) . "</textarea><br>";
 		
 		//--- select a few rows ---//
 		
@@ -361,7 +363,7 @@ function test_mysql(){
 		$sql = "UPDATE `{$table}` SET `data`='test3 test3 test3' WHERE `id`=" . $row_id;
 		@mysql_query($sql, $conn);
 		
-		$summary.= "3 random rows updated. <br>";
+		$summary.= "&bull; 3 random rows updated. <br>";
 		//--- update some rows ---//
 		
 		
@@ -369,14 +371,14 @@ function test_mysql(){
 		$sql = "DELETE FROM `{$table}` WHERE `id`=" . rand(1, $rows) ;
 		@mysql_query($sql, $conn);
 		
-		$summary.= "1 random row deleted. <br>";
+		$summary.= "&bull; 1 random row deleted. <br>";
 		//--- delete a row ---//
 		
 		//--- delete the table ---//
 		$sql = "DROP TABLE `{$table}`";
 		@mysql_query($sql, $conn);
 		
-		$summary.= "$table table dropped. <br>";
+		$summary.= "&bull; $table table dropped. <br>";
 		//--- delete the table ---//
 		
 		$endtime = microtime(true);
@@ -390,7 +392,7 @@ function test_mysql(){
 			$csv	.=",{$runtime}";
 		}
 		
-		display_msg("Operations: " . $summary . "<br> done in " . $runtime . ' seconds.' );
+		display_msg("Operations:<br> " . $summary . "<br> done in " . $runtime . ' seconds.' );
 		//--- finish
 		
 	}
@@ -745,9 +747,14 @@ input#submit:active, button:active, input[type="submit"]:active, input[type="but
 	padding: 10px;
 	font-size: 12px;
 }
+
+#block-ui-msg{
+	font: normal 120%/180% tahoma, arial, verdana, san-serif;
+}
 </style>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script src="http://code.highcharts.com/highcharts.js" type="text/javascript"></script>
+<script src="http://yes.googlecode.com/svn/trunk/jquery/blockui/1.2.3/jquery.blockUI.js" type="text/javascript"></script>
 <script>
 $(document).ready(function(){
 	$('ul.list input').change(function(){
@@ -759,6 +766,13 @@ $(document).ready(function(){
 			$(liParent).removeClass('selected');
 	});
 });
+
+function show_block_ui(){
+	 $.blockUI({ 
+		message: $('#block-ui-msg'),
+		css: { borderRadius: '6px', borderColor: '#CCC', boxShadow:'3px 3px 8px #000' }
+	});
+}
 </script>
 </head>
 <body>
@@ -842,7 +856,7 @@ $(document).ready(function(){
 					</p>
 					<p> 
 						<label for="mysql_rows">How many rows:</label> 
-						<input type="text" name="mysql_rows" id="mysql_rows" size="50" maxlength="255" value="999">
+						<input type="text" name="mysql_rows" id="mysql_rows" size="50" maxlength="255" value="99"> 
 					</p>
 					<input type="hidden" name="test_mysql" value="1">
 					<?php endif; ?>
@@ -901,9 +915,9 @@ $(document).ready(function(){
 					
 					<p align="center" class="submit">
 						<input type="hidden" name="action" value="execute">
-						<button type="submit"> Execute </button>
+						<button type="submit" onclick="show_block_ui();"> Execute </button>
 						&nbsp;&nbsp;&nbsp;&nbsp;
-						<button type="submit" name="export-csv" value="1">Execute And Save to CSV </button>
+						<button type="submit" onclick="show_block_ui();" name="export-csv" value="1">Execute And Save to CSV </button>
 					</p>
 				
 				</form>
@@ -973,7 +987,7 @@ $(document).ready(function(){
 					
 					<p class="submit" align="center">
 						
-						<button type="submit" onclick="window.location.reload();"> Re-run &#x21BB; </button>
+						<button type="submit" onclick="show_block_ui();"> Re-run &#x21BB; </button>
 						
 					</p>
 				</form>
@@ -1148,6 +1162,13 @@ $(document).ready(function(){
 		
 		<br class="isclear">
 		
+	</div>
+	
+	<div id="block-ui-msg" style="display:none;">
+		<h1 style="text-align:center;">
+			<img src="http://s17.postimage.org/wkjalnlzf/php_perf_preloader.gif" align="middle"> 
+			<br><br>... running tests ...
+		</h1>
 	</div>
 	
 	<div class="powerby">
